@@ -11,7 +11,7 @@ public interface DatabaseHandlerAsync {
 	void getLocations(AsyncCallback<String> callback)
 			throws IllegalArgumentException;
 	
-	void getLocation(String locationName, AsyncCallback<String> callback)
+	void getLocation(String locationName, AsyncCallback<LocationObject> callback)
 			throws IllegalArgumentException;
 	
 	void storeLocation(LocationObject object, AsyncCallback<String> callback) 

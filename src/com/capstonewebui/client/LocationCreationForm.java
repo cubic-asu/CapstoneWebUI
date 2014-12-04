@@ -3,310 +3,362 @@ package com.capstonewebui.client;
 import java.util.ArrayList;
 
 import com.capstonewebui.shared.LocationObject;
-import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.maps.client.InfoWindowContent;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
+
+import com.google.gwt.maps.client.overlays.CircleOptions;
+import com.google.gwt.maps.client.overlays.Marker;
+import com.google.gwt.maps.client.overlays.MarkerOptions;
 import com.google.gwt.maps.client.MapWidget;
-import com.google.gwt.maps.client.Maps;
-import com.google.gwt.maps.client.control.LargeMapControl;
-import com.google.gwt.maps.client.event.MapClickHandler;
-import com.google.gwt.maps.client.event.MapClickHandler.MapClickEvent;
-import com.google.gwt.maps.client.geom.LatLng;
-import com.google.gwt.maps.client.overlay.Marker;
+import com.google.gwt.maps.client.base.*;
+import com.google.gwt.maps.client.MapOptions;
+import com.google.gwt.maps.client.events.click.ClickMapEvent;
+import com.google.gwt.maps.client.events.click.ClickMapHandler;
+import com.google.gwt.maps.client.overlays.Circle;
+
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.DockLayoutPanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Grid;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
 
-public class LocationCreationForm extends AbsolutePanel{
+public class LocationCreationForm extends AbsolutePanel {
 
-	
 	private MapWidget map;
+	private MapOptions mapOpt;
+	private Marker mark = Marker.newInstance(null);
+	Circle circle = Circle.newInstance(null);
 	private TextBox longitudeTB;
 	private TextBox latitudeTB;
-	private TextBox descriptionTB;
+	private TextArea descriptionTB;
 	private TextBox nameTB;
-	private FlexTable worldBuilderGrid;
+	private FlexTable locationBuilderGrid = new FlexTable();
+	private HorizontalPanel mainPanel = new HorizontalPanel();
+	private VerticalPanel mapPanel = new VerticalPanel();
 	private CheckBox lockedCB;
-	private PopupPanel mapPanel;
 	private TextBox discoveryRadiusTB;
-	//private ListBox locationsToRetire;
 	private FlexTable dependentLocationsFlexTable;
-	
+
 	public LocationCreationForm() {
 		this.setVisible(false);
 		this.setSize("800px", "800px");
-		
-		worldBuilderGrid = new FlexTable();
-		worldBuilderGrid.setStyleName("centered");
+		this.add(assemblePanels());
+	}
+
+	class discoveryRadiusHandler implements KeyUpHandler {
+
+		@Override
+		public void onKeyUp(KeyUpEvent event) {
+			if (isNumber(discoveryRadiusTB.getText())) {
+				if (!discoveryRadiusTB.getText().isEmpty()) {
+					circle.setRadius(Double.parseDouble(discoveryRadiusTB
+							.getText()));
+				}
+			} else {
+				discoveryRadiusTB.setText("10");
+				circle.setRadius(Double.parseDouble(discoveryRadiusTB.getText()));
+			}
+
+		}
+
+	}
+
+	private HorizontalPanel assemblePanels() {
 
 		addLabelToPanel();
 		addSecondColumnContent();
-		addThirdColumn();
-		
-		
-		this.add(worldBuilderGrid);
 		addAvailableLocationsHeader();
 		setUpMapPanel();
 		addNavigationButtons();
-		
-	}
-	
-	public void buildMapUI()
-	{
-	    
-	    Button closeButton = new Button("Close");
-	    closeButton.addClickHandler(new CloseButtonHandler());
-	    
-	    final DockLayoutPanel dock = new DockLayoutPanel(Unit.PX);
-	    HorizontalPanel mapControlPanel = new HorizontalPanel();
-	    
-	    mapControlPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
-	    LatLng cawkerCity = LatLng.newInstance(39.509, -98.434);
-	    map = new MapWidget(cawkerCity, 2);
-	    map.setSize("600px", "600px");
-	    // Add some controls for the zoom level
-	    //map.addControl(new LargeMapControl());
 
-	    mapControlPanel.add(closeButton);
-	    dock.addNorth(map, 600);
-	    dock.addEast(mapControlPanel, 200);
-	  
-	    
-	    // Add the map to the HTML host page
-	    mapPanel.add(dock);
-	    
-	    map.addMapClickHandler(new selectMapLocation());
-	    
+		descriptionTB.addStyleName("locationTextArea");
+		locationBuilderGrid.setStyleName("locationBuilderGrid");
+		locationBuilderGrid.setSize("400px", "400px");
+		mainPanel.add(locationBuilderGrid);
+		mainPanel.add(mapPanel);
+
+		return mainPanel;
+
 	}
-	
-	private void setUpMapPanel()
-	{
-		mapPanel = new PopupPanel();
-		mapPanel.setSize("800px", "800px");
+
+	public void resizeMap() {
+		map.triggerResize();
 	}
-	
-	private void addLabelToPanel()
-	{
-		worldBuilderGrid.setText(0, 0, "Location ID: ");
-		worldBuilderGrid.setText(1, 0, "Name: ");
-		worldBuilderGrid.setText(2, 0, "description: ");
-		worldBuilderGrid.setText(3, 0, "Longitude: ");
-		worldBuilderGrid.setText(4, 0, "Latitude: ");
-		worldBuilderGrid.setText(5, 0, "Discovery Radius: ");
-		worldBuilderGrid.setText(6, 0, "Locked: ");
-		worldBuilderGrid.setText(7, 0, "");
-		worldBuilderGrid.setText(8, 0, "Dependencies: ");
+
+	public void resetOverlays() {
+		if (mark != null) {
+			mark.close();
+		}
+		if (circle != null) {
+			circle.setMap(null);
+		}
 	}
-	
-	
-	//second column is a mix of textBoxes, checkboxes, and list
-	private void addSecondColumnContent()
-	{
+
+	public void buildMapUI() {
+		HorizontalPanel mapControlPanel = new HorizontalPanel();
+
+		mapControlPanel
+				.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
+		LatLng arizonaStateUniversity = LatLng.newInstance(33.453760,
+				-112.072978);
+		mapOpt = MapOptions.newInstance();
+		mapOpt.setCenter(arizonaStateUniversity);
+		mapOpt.setZoom(4);
+		map = new MapWidget(mapOpt);
+		map.setSize("380px", "380px");
+
+		map.addClickHandler(new selectMapLocation());
+
+	}
+
+	private void setUpMapPanel() {
+		mapPanel = new VerticalPanel();
+		mapPanel.setStyleName("locationMapPanel");
+		mapPanel.setSize("400px", "400px");
+		buildMapUI();
+		mapPanel.add(map);
+	}
+
+	private void addLabelToPanel() {
+		locationBuilderGrid.setText(0, 0, "Name: ");
+		locationBuilderGrid.setText(1, 0, "Description: ");
+		locationBuilderGrid.setText(2, 0, "Longitude: ");
+		locationBuilderGrid.setText(3, 0, "Latitude: ");
+		locationBuilderGrid.setText(4, 0, "Discovery Radius: ");
+		locationBuilderGrid.setText(6, 0, "Locked: ");
+		locationBuilderGrid.setText(7, 0, "");
+		locationBuilderGrid.setText(8, 0, "Dependencies: ");
+	}
+
+	// second column is a mix of textBoxes, checkboxes, and list
+	private void addSecondColumnContent() {
 
 		TextBox locationIDTB = new TextBox();
 		locationIDTB.setEnabled(false);
-		
-		worldBuilderGrid.setWidget(0, 1, locationIDTB);
-		
-		nameTB = new TextBox();
-		worldBuilderGrid.setWidget(1, 1, nameTB);
-		
-		descriptionTB = new TextBox();
-		worldBuilderGrid.setWidget(2, 1, descriptionTB);
-		
-		
-		longitudeTB = new TextBox();
-		
-		FlowPanel longitudeContainer = new FlowPanel();
-		Button map2Button = new Button("->");
-		longitudeContainer.add(longitudeTB);
-		longitudeContainer.add(map2Button);
-		worldBuilderGrid.setWidget(3, 1, longitudeContainer);
-		map2Button.addClickHandler(new MapLauncherHandler());
-		
-		
-		latitudeTB = new TextBox();
-		worldBuilderGrid.setWidget(4, 1, latitudeTB);
-		
-		discoveryRadiusTB = new TextBox();
-		discoveryRadiusTB.setText("meters");
-		worldBuilderGrid.setWidget(5, 1, discoveryRadiusTB);
 
-		
-		
+		nameTB = new TextBox();
+		locationBuilderGrid.setWidget(0, 1, nameTB);
+
+		descriptionTB = new TextArea();
+		locationBuilderGrid.setWidget(1, 1, descriptionTB);
+
+		longitudeTB = new TextBox();
+
+		FlowPanel longitudeContainer = new FlowPanel();
+		longitudeContainer.add(longitudeTB);
+		locationBuilderGrid.setWidget(2, 1, longitudeContainer);
+
+		latitudeTB = new TextBox();
+		locationBuilderGrid.setWidget(3, 1, latitudeTB);
+
+		discoveryRadiusTB = new TextBox();
+		locationBuilderGrid.setWidget(4, 1, discoveryRadiusTB);
+
 		lockedCB = new CheckBox();
-		worldBuilderGrid.setWidget(6, 1, lockedCB);
-		
+		locationBuilderGrid.setWidget(6, 1, lockedCB);
+
+		discoveryRadiusTB.addKeyUpHandler(new discoveryRadiusHandler());
 	}
-	
-	//this consists "id", "longitude/latitude", and "edit/add" buttons
-	private void addAvailableLocationsHeader()
-	{
+
+	// this consists "id", "longitude/latitude", and "edit/add" buttons
+	private void addAvailableLocationsHeader() {
 		dependentLocationsFlexTable = new FlexTable();
-		worldBuilderGrid.getFlexCellFormatter().setColSpan(9, 0, 2);
-		worldBuilderGrid.setWidget(9,0, dependentLocationsFlexTable);
-		
-		dependentLocationsFlexTable.getColumnFormatter().setWidth(0, "26px");
+		locationBuilderGrid.getFlexCellFormatter().setColSpan(9, 0, 2);
+		locationBuilderGrid.setWidget(9, 0, dependentLocationsFlexTable);
+
+		dependentLocationsFlexTable.getColumnFormatter().setWidth(0, "113px");
 		dependentLocationsFlexTable.getColumnFormatter().setWidth(1, "125px");
 		dependentLocationsFlexTable.getColumnFormatter().setWidth(2, "81px");
-		dependentLocationsFlexTable.getRowFormatter().addStyleName(0, "locationListHeader");
+		dependentLocationsFlexTable.getRowFormatter().addStyleName(0,
+				"locationListHeader");
 		dependentLocationsFlexTable.setText(0, 0, "Locations");
 		dependentLocationsFlexTable.setText(0, 1, "Unlock");
 		dependentLocationsFlexTable.setText(0, 2, "Retire");
 	}
-	
-	//third column houses optional option for each field.
-	private void addThirdColumn()
-	{	
-		Button map2Button = new Button("->");
+
+	public void disableNameField() {
+		nameTB.setEnabled(false);
 	}
-	
-	private void clearPanel()
-	{
+
+	public void enableNameField() {
+		nameTB.setEnabled(true);
+	}
+
+	private void clearPanel() {
 		nameTB.setText("");
 		descriptionTB.setText("");
 		longitudeTB.setText("");
 		latitudeTB.setText("");
 		lockedCB.setValue(false);
-		
-		byte dependentTableSize = (byte)dependentLocationsFlexTable.getRowCount();
-		
-		for(int i = 1; i < dependentTableSize; i++)
-		{
-			dependentLocationsFlexTable.removeRow(i);
-		}
-		
-		
+
+		dependentLocationsFlexTable.removeAllRows();
+
+		dependentLocationsFlexTable.getColumnFormatter().setWidth(0, "26px");
+		dependentLocationsFlexTable.getColumnFormatter().setWidth(1, "125px");
+		dependentLocationsFlexTable.getColumnFormatter().setWidth(2, "81px");
+		dependentLocationsFlexTable.getRowFormatter().addStyleName(0,
+				"locationListHeader");
+		dependentLocationsFlexTable.setText(0, 0, "Locations");
+		dependentLocationsFlexTable.setText(0, 1, "Unlock");
+		dependentLocationsFlexTable.setText(0, 2, "Retire");
+
 	}
-	
-	private void addNavigationButtons()
-	{
-		Button acceptButton = new Button("Accept");
-		Button discardButton = new Button("Discard");
-		
-		
-		FlowPanel navigationButtonsContainer= new FlowPanel();
-		navigationButtonsContainer.add(acceptButton);
-		navigationButtonsContainer.add(discardButton);
-		
-		//adds listeners
-		discardButton.addClickHandler(new CancelLocationHandler());
-		acceptButton.addClickHandler(new SaveLocationHandler());
-		
-		navigationButtonsContainer.setStyleName("locationCreationButtonsContainer");
-		this.add(navigationButtonsContainer);
+
+	private void addNavigationButtons() {
+		Button saveButton = new Button("Save");
+		Button backButton = new Button("Back");
+
+		HorizontalPanel navigationButtonsContainer = new HorizontalPanel();
+		navigationButtonsContainer.add(backButton);
+		navigationButtonsContainer.add(saveButton);
+
+		// adds listeners
+		backButton.addClickHandler(new CancelLocationHandler());
+		saveButton.addClickHandler(new SaveLocationHandler());
+
+		backButton.addStyleName("backButton");
+		saveButton.addStyleName("saveButton");
+
+		navigationButtonsContainer.setStyleName("discardSavePanel");
+		mapPanel.add(navigationButtonsContainer);
 	}
-	
-	public void update(LocationObject location, ArrayList<LocationObject> allLocations)
-	{
+
+	public void update(LocationObject location,
+			ArrayList<LocationObject> allLocations) {
 		clearFields();
 		longitudeTB.setText(location.getLongitude());
 		latitudeTB.setText(location.getLatitude());
 		descriptionTB.setText(location.getLocationDescription());
 		nameTB.setText(location.getLocationName());
-		
+		discoveryRadiusTB.setText(location.getDisoveryRadius());
+		// update map with existing marker
+		LatLng locationLatLng = LatLng.newInstance(
+				Double.parseDouble(location.getLatitude()),
+				Double.parseDouble(location.getLongitude()));
+		resetOverlays();
+		mark.setPosition(locationLatLng);
+		mark.setMap(map);
+		circle.setCenter(locationLatLng);
+		try {
+			circle.setRadius(Double.parseDouble(location.getDisoveryRadius()));
+		} catch (Exception ex) {
+			circle.setRadius(35d);
+		}
+		circle.setMap(map);
+		// don't zoom in too close to marker
+		LatLngBounds bounds = LatLngBounds.newInstance(locationLatLng,
+				locationLatLng);
+		LatLng tempLatLng1 = LatLng.newInstance(bounds.getNorthEast()
+				.getLatitude() + 0.01,
+				bounds.getNorthEast().getLongitude() + 0.01);
+		LatLng tempLatLng2 = LatLng.newInstance(bounds.getNorthEast()
+				.getLatitude() - 0.01,
+				bounds.getNorthEast().getLongitude() - 0.01);
+		bounds.extend(tempLatLng1);
+		bounds.extend(tempLatLng2);
+		map.fitBounds(bounds);
+
 		updateAvailableLocations(allLocations);
 	}
-	
-	class selectMapLocation implements MapClickHandler
-	{
 
+	private boolean isNumber(String str) {
+		return str.matches("[0-9]*");
+	}
+
+	class selectMapLocation implements ClickMapHandler {
 		@Override
-		public void onClick(MapClickEvent event) {
-			map.clearOverlays();
-			LatLng selectedPoint = event.getLatLng();
-			map.addOverlay(new Marker(selectedPoint));
-			
+		public void onEvent(ClickMapEvent event) {
+			LatLng selectedPoint = event.getMouseEvent().getLatLng();
 
-	    	map.getInfoWindow().open(selectedPoint,
-	    			new InfoWindowContent(nameTB.getText()));
-			
-			//radius circle
-			
+			if (mark != null) {
+				mark.setPosition(selectedPoint);
+				mark.setMap(map);
+				CircleOptions circleOptions = CircleOptions.newInstance();
+				circle.setOptions(circleOptions);
+				circle.setCenter(selectedPoint);
+				circle.setRadius(35d);
+				circle.setMap(map);
+				discoveryRadiusTB.setText("35");
+			} else {
+				CircleOptions circleOptions = CircleOptions.newInstance();
+				circle.setOptions(circleOptions);
+				circle.setCenter(selectedPoint);
+				circle.setRadius(35d);
+				circle.setMap(map);
+				discoveryRadiusTB.setText("35");
+
+				MarkerOptions options = MarkerOptions.newInstance();
+				mark.setOptions(options);
+				mark.setPosition(selectedPoint);
+				mark.setMap(map);
+			}
+
 			String selectedPointString = selectedPoint.toString();
 			selectedPointString = selectedPointString.replace(")", "");
 			selectedPointString = selectedPointString.replace("(", "");
 			String selectedPointStringArray[] = selectedPointString.split(",");
-			
+
 			longitudeTB.setText(selectedPointStringArray[1]);
 			latitudeTB.setText(selectedPointStringArray[0]);
-			
 		}
-		
 	}
-	
-	private void buildDepedency(LocationObject location)
-	{
-		ArrayList<String> locationsToRetireArray = new ArrayList<String>(); 
-		ArrayList<String> locationsToUnlockArray = new ArrayList<String>(); 
-		String locationName = "";
+
+	private void buildDepedency(LocationObject location) {
+		ArrayList<String> locationsToRetireArray = new ArrayList<String>();
+		ArrayList<String> locationsToUnlockArray = new ArrayList<String>();
 		byte rowCount = (byte) dependentLocationsFlexTable.getRowCount();
-		
-		
-		for(int i = 1; i < rowCount; i++)
-		{
-			
-			
-			System.out.println("collumn " + i + "has: " + dependentLocationsFlexTable.getCellCount(i));
-			
-			CheckBox cb = (CheckBox) dependentLocationsFlexTable.getWidget(i, 1);
-			if(cb.getValue() == true)
-			{
-				locationsToUnlockArray.add(dependentLocationsFlexTable.getText(i, 0));
+
+		for (int i = 1; i < rowCount; i++) {
+
+			CheckBox cb = (CheckBox) dependentLocationsFlexTable
+					.getWidget(i, 1);
+			if (cb.getValue() == true) {
+				locationsToUnlockArray.add(dependentLocationsFlexTable.getText(
+						i, 0));
 			}
-			
-			
+
 			cb = (CheckBox) dependentLocationsFlexTable.getWidget(i, 2);
-			if(cb.getValue() == true)
-			{
-				locationsToRetireArray.add(dependentLocationsFlexTable.getText(i, 0));
+			if (cb.getValue() == true) {
+				locationsToRetireArray.add(dependentLocationsFlexTable.getText(
+						i, 0));
 			}
-			
+
 		}
-		
+
 		location.setLocationToUnlock(locationsToUnlockArray);
 		location.setLocationToRetire(locationsToRetireArray);
 	}
-	
-	
-	
-	private void clearFields()
-	{
+
+	private void clearFields() {
 		nameTB.setText("");
 		descriptionTB.setText("");
-		descriptionTB.setText("");
-		nameTB.setText("");
+		longitudeTB.setText("");
+		latitudeTB.setText("");
+		discoveryRadiusTB.setText("");
 		lockedCB.setValue(false);
-		
-		for(int i = 1; i < dependentLocationsFlexTable.getRowCount(); i++)
-		{
+
+		for (int i = 1; i < dependentLocationsFlexTable.getRowCount(); i++) {
 			dependentLocationsFlexTable.removeAllRows();
 			addAvailableLocationsHeader();
 		}
 	}
-	
-	private void updateAvailableLocations(ArrayList<LocationObject> locations)
-	{
+
+	private void updateAvailableLocations(ArrayList<LocationObject> locations) {
 		int locationSize = locations.size();
 		byte vacantRow = 1;
-		for(int i = 1; i <= locationSize; i++ )
-		{
-			
-			if(locations.get(i-1).getLocationName().compareTo(nameTB.getText()) != 0)
-			{
-				dependentLocationsFlexTable.setText(vacantRow,0,locations.get(i-1).getLocationName());
+		for (int i = 1; i <= locationSize; i++) {
+
+			if (locations.get(i - 1).getLocationName()
+					.compareTo(nameTB.getText()) != 0) {
+				dependentLocationsFlexTable.setText(vacantRow, 0, locations
+						.get(i - 1).getLocationName());
 				CheckBox unlock = new CheckBox();
 				CheckBox retire = new CheckBox();
 				dependentLocationsFlexTable.setWidget(vacantRow, 1, unlock);
@@ -316,63 +368,46 @@ public class LocationCreationForm extends AbsolutePanel{
 		}
 	}
 
-	public void generateNewLocation(ArrayList<LocationObject> locations)
-	{
+	public void generateNewLocation(ArrayList<LocationObject> locations) {
 		clearPanel();
 		updateAvailableLocations(locations);
 	}
 
-	
-	class MapLauncherHandler implements ClickHandler
-	{
-
-		@Override
-		public void onClick(ClickEvent event) {
-			mapPanel.center();
-		}
-		
-	}
-	
-	class CloseButtonHandler implements ClickHandler
-	{
-
-		@Override
-		public void onClick(ClickEvent event) {
-			mapPanel.hide();
-		}
-	}	
-	
-	class SaveLocationHandler implements ClickHandler
-	{
+	class SaveLocationHandler implements ClickHandler {
 
 		@Override
 		public void onClick(ClickEvent event) {
 			CapstoneWebUI.locationCreationPanel.setVisible(false);
 			CapstoneWebUI.worldCreationForm.setVisible(true);
-			
-			LocationObject location = new LocationObject();
-			location.setLocationName(nameTB.getText());
-			location.setLocationDescription(descriptionTB.getText());
-			location.setLongitude(longitudeTB.getText());
-			location.setLatitude(latitudeTB.getText());
-			location.setLocked(lockedCB.getValue());
-			location.setDisoveryRadius(discoveryRadiusTB.getValue());
-			buildDepedency(location);
+			CapstoneWebUI.worldCreationForm.resizeMap();
+			enableNameField();
 
-			CapstoneWebUI.worldCreationForm.addLocation(location);
+			if (!nameTB.getText().isEmpty()
+					&& !descriptionTB.getText().isEmpty()
+					&& !longitudeTB.getText().isEmpty()) {
+				LocationObject location = new LocationObject();
+				location.setLocationName(nameTB.getText());
+				location.setLocationDescription(descriptionTB.getText());
+				location.setLongitude(longitudeTB.getText());
+				location.setLatitude(latitudeTB.getText());
+				location.setLocked(lockedCB.getValue());
+				location.setDisoveryRadius(discoveryRadiusTB.getText());
+				buildDepedency(location);
+				CapstoneWebUI.worldCreationForm.addLocation(location);
+			}
+
 		}
 	}
-	
-	class CancelLocationHandler implements ClickHandler
-	{
+
+	class CancelLocationHandler implements ClickHandler {
 
 		@Override
 		public void onClick(ClickEvent event) {
 			CapstoneWebUI.locationCreationPanel.setVisible(false);
 			CapstoneWebUI.worldCreationForm.setVisible(true);
+			CapstoneWebUI.worldCreationForm.resizeMap();
 		}
-		
+
 	}
-	
-	
+
 }

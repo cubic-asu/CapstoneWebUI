@@ -1,0 +1,2 @@
+serviceClass: com.capstonewebui.client.DatabaseHandler
+path: 14131C67B0E4249CFD4FD988664610C1.gwt.rpc

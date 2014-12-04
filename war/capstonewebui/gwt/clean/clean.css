@@ -25,9 +25,7 @@ body {
   margin: 10px;
   border: 0px;
   padding: 0px;
-  background-image:url("../mapBackGround.jpg");
-  background-size: 100% 100%;
-  background-repeate: no-repeat;
+  background: #fff;
   direction: ltr;
 }
 a, a:visited {

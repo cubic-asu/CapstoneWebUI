@@ -1,2 +1,3 @@
 # Module capstonewebui
 # RPC service class, partial path of RPC policy file
+com.capstonewebui.client.DatabaseHandler, 14131C67B0E4249CFD4FD988664610C1.gwt.rpc

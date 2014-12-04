@@ -13,7 +13,7 @@ public interface DatabaseHandler extends RemoteService {
 	String getWorlds() throws IllegalArgumentException;
 	String getLocations() throws IllegalArgumentException;
 	String getWorld(String worldName) throws IllegalArgumentException;
-	String getLocation(String locationName) throws IllegalArgumentException;
+	LocationObject getLocation(String locationName);
 	String getWorldInfo(String worldName) throws IllegalArgumentException;
 	String deleteLocation(String locationName) throws IllegalArgumentException;
 	String deleteWorld(String worldName) throws IllegalArgumentException;
